@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Rabbit Rush Pro Enhanced & Challenging (30 LVL)</title>
+<style>
+    :root { --c-bg: #1a1a1a; --c-ui: rgba(0,0,0,0.8); --c-acc: #0f0; --c-txt: #eee; --font: 'Courier New', monospace; }
+    /* Base styles - Minimal changes */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--c-bg); overflow: hidden; font-family: var(--font); color: var(--c-txt); }
+    
+    /* Layout */
+    #app { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000; }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+    
+    /* UI Overlay */
+    #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; }
+    
+    /* Screens */
+    .screen { position: absolute; inset: 0; background: var(--c-ui); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; transition: opacity 0.2s, visibility 0.2s; z-index: 20; padding: 20px; text-align: center; }
+    .hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+    
+    h1 { font-size: 3rem; color: var(--c-acc); text-shadow: 0 4px 0 #000; margin: 0 0 10px; text-transform: uppercase; letter-spacing: -2px; }
+    h2 { font-size: 1.2rem; color: #aaa; margin-bottom: 30px; }
+    .panel { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid #444; width: 100%; max-width: 400px; }
+    
+    /* Interactive Elements */
+    button { background: #333; color: #fff; border: 2px solid #555; padding: 12px 24px; margin: 8px; font-size: 1rem; font-family: var(--font); font-weight: bold; cursor: pointer; text-transform: uppercase; width: 100%; max-width: 280px; transition: 0.1s; border-radius: 4px; box-shadow: 0 4px 0 #000; }
+    button:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; background: #444; border-color: var(--c-acc); }
+    button.primary { border-color: var(--c-acc); color: var(--c-acc); }
+    button.danger { border-color: #f44; color: #f44; }
+    
+    .row { display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 8px 0; }
+    input[type=range] { flex: 1; margin: 0 10px; }
+    input[type=text] { background: #222; border: 1px solid #555; color: #fff; padding: 5px; width: 100px; text-align: center; font-family: var(--font); }
+    
+    /* HUD */
+    #hud { padding: 10px 15px; width: 100%; display: flex; justify-content: space-between; pointer-events: none; text-shadow: 1px 1px 0 #000; font-weight: bold; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+    .stat-box { display: flex; flex-direction: column; gap: 4px; }
+    .bar-wrap { width: 120px; height: 10px; background: #333; border: 1px solid #fff; position: relative; }
+    .hp-fill { height: 100%; background: #f04; width: 100%; transition: width 0.2s; }
+    .armor-fill { position: absolute; top: 0; left: 0; height: 100%; background: #00f; width: 0%; transition: width 0.2s; opacity: 0.7; }
+
+    /* Dialogue Bubble */
+    #dialogue { position: absolute; top: 0; left: 0; font-size: 10px; color: #000; background: #fff; border: 1px solid #000; padding: 2px 5px; border-radius: 8px; pointer-events: none; transform: translate(-50%, -100%); white-space: nowrap; max-width: 150px; text-align: center; }
+
+    /* Touch Controls */
+    #controls { position: absolute; bottom: 0; left: 0; width: 100%; height: 160px; pointer-events: none; z-index: 15; padding: 10px; display: flex; justify-content: space-between; }
+    .zone { pointer-events: auto; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 16px; backdrop-filter: blur(2px); transition: 0.1s; display: flex; align-items: center; justify-content: center; font-size: 24px; color: rgba(255,255,255,0.5); }
+    .zone:active, .zone.active { background: rgba(0,255,0,0.2); border-color: var(--c-acc); transform: scale(0.95); }
+    
+    #dpad { display: flex; gap: 10px; height: 100%; width: 180px; }
+    .d-btn { flex: 1; height: 100%; }
+    #actions { display: flex; gap: 15px; height: 100%; width: 160px; justify-content: flex-end; align-items: flex-end; }
+    .a-btn { width: 70px; height: 70px; border-radius: 50%; }
+    .a-btn.big { width: 85px; height: 85px; background: rgba(100,255,100,0.1); }
+    
+    /* Misc */
+    #console { position: absolute; bottom: 5px; left: 5px; font-size: 10px; color: #ff0; pointer-events: none; white-space: pre; opacity: 0.7; max-height: 100px; overflow: hidden; z-index: 30; text-shadow: 1px 1px 0 #000; }
+    #pause-icon { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border: 1px solid #fff; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; z-index: 50; }
+    
+    @media(min-width: 800px) { #controls { display: none; } } /* Hide touch on big screens, assume keybd */
+</style>
+</head>
+<body>
+
+<div id="app">
+    <canvas id="cvs"></canvas>
+    <div id="ui">
+        <div id="hud">
+            <div class="stat-box">
+                <div class="bar-wrap"><div id="hud-armor" class="armor-fill"></div><div id="hud-hp" class="hp-fill"></div></div>
+                <span id="hud-score">SCORE: 0</span>
+            </div>
+            <div class="stat-box" style="align-items: flex-end; font-size: 12px;">
+                <span id="hud-lvl">LVL: 1</span>
+                <span id="hud-seed" style="color:#888">SEED: RABBIT</span>
+            </div>
+        </div>
+        <div id="console"></div>
+    </div>
+    
+    <div id="pause-icon">||</div>
+
+    <div id="controls">
+        <div id="dpad">
+            <div class="zone d-btn" data-key="Left">◄</div>
+            <div class="zone d-btn" data-key="Right">►</div>
+        </div>
+        <div id="actions">
+            <div class="zone a-btn" data-key="Shoot">●</div>
+            <div class="zone a-btn big" data-key="Jump">▲</div>
+        </div>
+    </div>
+
+    <div id="scr-start" class="screen">
+        <h1>Rabbit Rush Pro</h1>
+        <h2>30 Levels of Pure Challenge</h2>
+        <div class="panel">
+            <button id="btn-continue" class="primary hidden">Continue</button>
+            <button id="btn-play">New Game</button>
+            <button id="btn-lab">ProcGen Lab</button>
+            <button id="btn-settings">Settings</button>
+        </div>
+    </div>
+
+    <div id="scr-settings" class="screen hidden">
+        <h1>Settings</h1>
+        <div class="panel">
+            <div class="row"><span>Master Vol</span> <input type="range" id="opt-vol" min="0" max="100" value="50"></div>
+            <div class="row"><span>Music</span> <input type="checkbox" id="opt-mus" checked></div>
+            <div class="row"><span>SFX</span> <input type="checkbox" id="opt-sfx" checked></div>
+            <div class="row"><span>Quality</span> <select id="opt-qual"><option value="h">High</option><option value="l">Low</option></select></div>
+            <div class="row"><span>Debug</span> <input type="checkbox" id="opt-dbg"></div>
+            <button onclick="UI.back()">Back</button>
+        </div>
+    </div>
+
+    <div id="scr-lab" class="screen hidden">
+        <h1>ProcGen Lab</h1>
+        <div class="panel">
+            <div class="row"><span>Seed</span> <input type="text" id="lab-seed" value="perfect"></div>
+            <div class="row"><span>Diff (1-10)</span> <input type="range" id="lab-diff" min="1" max="10" value="3"></div>
+            <button id="btn-lab-run" class="primary">Generate & Play</button>
+            <button onclick="UI.back()">Back</button>
+        </div>
+    </div>
+
+    <div id="scr-pause" class="screen hidden">
+        <h1>PAUSED</h1>
+        <div class="panel">
+            <button onclick="Game.resume()" class="primary">Resume</button>
+            <button onclick="UI.show('scr-settings')">Options</button>
+            <button onclick="Game.quit()" class="danger">Quit to Menu</button>
+        </div>
+    </div>
+
+    <div id="scr-res" class="screen hidden">
+        <h1 id="res-title">Level Clear!</h1>
+        <h2 id="res-stats">Score: 0</h2>
+        <div class="panel">
+            <button id="btn-next" class="primary">Next Level</button>
+            <button onclick="Game.replay()">Replay</button>
+            <button onclick="Game.quit()" class="danger">Menu</button>
+        </div>
+    </div>
+</div>
+
+<div id="dialogue" style="visibility: hidden;"></div>
+
+<script>
+/**
+ * RABBIT RUSH ENGINE - CHALLENGING EDITION (30 LEVELS) - MODIFIED
+ * * FIXES: 
+ * 1. Moving Platform player inheritance fixed. (Critical fix)
+ * * ENHANCEMENTS:
+ * 1. MAX_LEVEL set to 30.
+ * 2. Player Armor added (stat + HUD).
+ * 3. New Entities: ArmorPack, SpeedBoost, TankEnemy.
+ * 4. Enemy Loot System (Health, Armor, Speed Boost on kill).
+ * 5. Dialogue/Speech Bubble system for challenge (Increased visibility time).
+ * * MODIFICATIONS (Requested by User):
+ * A. **ProcGen Reachability** improved for less impossible jumps.
+ * B. **Level Length** increased with level progression (longer levels).
+ * C. **Platform Height Variance** increased (more verticality/multiple paths).
+ * D. **Moving Platforms** chance increased for alternative pathing.
+ * E. **Tank Enemy** added for varied combat encounters.
+ */
+
+// --- 1. CORE UTILS & CONSTANTS ---
+const C = {
+    G: 1500, T_VEL: 900, PLR_SPD: 350, JUMP: -580, DBL_JUMP: -450,
+    TILE: 40, WIDTH: 0, HEIGHT: 0, MAX_LEVEL: 30,
+    FIXED_DT: 1/60, 
+    MAX_JUMP_DIST_X: 200, 
+    MAX_JUMP_DIST_Y: 120, 
+    MAX_DBL_JUMP_DIST_X: 300, // Reflects double jump reach
+    MAX_DBL_JUMP_DIST_Y: 180, // Reflects double jump reach
+};
+
+const LOG = (msg) => {
+    const c = document.getElementById('console');
+    c.innerText = `[${new Date().toLocaleTimeString()}] ${msg}\n` + c.innerText;
+    if(c.innerText.length > 500) c.innerText = c.innerText.substring(0,500);
+};
+
+const M = {
+    clamp: (v,min,max) => Math.min(Math.max(v, min), max),
+    overlap: (a,b) => a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y,
+    dist: (p1, p2) => Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)),
+};
+
+// --- 2. STORAGE (Unchanged) ---
+const Store = {
+    key: 'rr_save_v5', // New key for the 30-level challenging version
+    data: { seed: 'rabbit', lvl: 1, score: 0, opt: { vol:50, mus:true, sfx:true, qual:'h', dbg:false } },
+    load: function() {
+        try {
+            const s = localStorage.getItem(this.key);
+            if(s) this.data = {...this.data, ...JSON.parse(s)};
+        } catch(e) { LOG("Save load fail"); }
+        return this.data;
+    },
+    save: function() {
+        try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch(e){}
+    }
+};
+
+// --- 3. AUDIO SYSTEM (WebAudio) - Unchanged ---
+const Aud = (() => {
+    let ctx, master;
+    let notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88];
+    let loopId = null;
+
+    const init = () => {
+        if(ctx) return;
+        try {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+            master = ctx.createGain();
+            master.connect(ctx.destination);
+            setVol(Store.data.opt.vol);
+        } catch(e) { LOG("Audio init fail"); }
+    };
+
+    const setVol = (v) => { if(master) master.gain.value = v/100; };
+
+    const playTone = (freq, type, dur, vol, slide=0) => {
+        if(!ctx || !Store.data.opt.sfx) return;
+        if(ctx.state === 'suspended') ctx.resume();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, ctx.currentTime);
+        if(slide) o.frequency.linearRampToValueAtTime(freq+slide, ctx.currentTime+dur);
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        o.connect(g); g.connect(master);
+        o.start(); o.stop(ctx.currentTime + dur + 0.1);
+    };
+
+    const noise = (dur, vol) => {
+        if(!ctx || !Store.data.opt.sfx) return;
+        const b = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+        const d = b.getChannelData(0);
+        for(let i=0; i<d.length; i++) d[i] = Math.random()*2-1;
+        const s = ctx.createBufferSource(); s.buffer = b;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(vol, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime+dur);
+        s.connect(g); g.connect(master);
+        s.start();
+    };
+
+    const musLoop = () => {
+        if(!Store.data.opt.mus || !ctx) return;
+        let n = notes[Math.floor(Math.random()*notes.length)];
+        let oct = Math.random()>0.5 ? 1 : 2;
+        playTone(n*oct, 'triangle', 0.3, 0.05);
+        loopId = setTimeout(musLoop, 250);
+    };
+
+    return {
+        init, setVol,
+        startMus: () => { if(loopId) clearTimeout(loopId); musLoop(); },
+        stopMus: () => { if(loopId) clearTimeout(loopId); loopId = null; },
+        sfx: {
+            jump: () => playTone(300, 'square', 0.1, 0.1, 100),
+            shoot: () => { noise(0.1, 0.1); playTone(800, 'sawtooth', 0.1, 0.05, -400); },
+            hit: () => { playTone(150, 'sawtooth', 0.2, 0.2, -100); noise(0.2, 0.1); },
+            coin: () => { playTone(1200, 'sine', 0.1, 0.1); setTimeout(()=>playTone(1800,'sine',0.2,0.1), 50); },
+            win: () => { [0,200,400].forEach((t,i) => setTimeout(()=>playTone(400+i*100,'square',0.3,0.1), t)); },
+            heal: () => { playTone(2000, 'sine', 0.1, 0.1); },
+            armor: () => { playTone(1500, 'square', 0.1, 0.1); setTimeout(()=>playTone(2500,'square',0.1,0.1), 50); },
+            boost: () => { playTone(1800, 'triangle', 0.1, 0.1, 500); }
+        }
+    };
+})();
+
+// --- 4. INPUT (Unchanged) ---
+const Inp = (() => {
+    const s = { l:0, r:0, j:0, f:0 };
+    const kMap = { ArrowLeft:'l', KeyA:'l', ArrowRight:'r', KeyD:'r', Space:'j', KeyZ:'j', KeyX:'f' };
+    
+    const handler = (e, val) => { if(kMap[e.code]) s[kMap[e.code]] = val; };
+    window.addEventListener('keydown', e => handler(e, 1));
+    window.addEventListener('keyup', e => handler(e, 0));
+
+    // Touch
+    const tMap = { 'Left':'l', 'Right':'r', 'Jump':'j', 'Shoot':'f' };
+    const touch = (e, active) => {
+        e.preventDefault();
+        const tar = e.target.closest('.zone');
+        if(tar) {
+            const k = tar.dataset.key;
+            if(tMap[k]) s[tMap[k]] = active ? 1 : 0;
+            active ? tar.classList.add('active') : tar.classList.remove('active');
+        }
+    };
+    
+    const ctrls = document.getElementById('controls');
+    ctrls.addEventListener('touchstart', e => touch(e, true), {passive:false});
+    ctrls.addEventListener('touchend', e => touch(e, false));
+
+    return { get: () => s, reset: () => { for(let k in s) s[k]=0; } };
+})();
+
+// --- 5. GRAPHICS & ASSETS (New assets: TankEnemy, ArmorPack, SpeedBoost) ---
+const GFX = (() => {
+    const cache = {};
+    const mk = (k, w, h, fn) => {
+        if(cache[k]) return cache[k];
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        fn(c.getContext('2d'), w, h);
+        cache[k] = c;
+        return c;
+    };
+
+    const init = () => {
+        // Player (unchanged)
+        mk('plr', 32, 32, (c,w,h) => {
+            c.fillStyle='#0f0'; c.fillRect(4,8,24,20);
+            c.fillRect(4,0,6,12); c.fillRect(22,0,6,12);
+            c.fillStyle='#fff'; c.fillRect(8,12,6,6); c.fillRect(20,12,6,6);
+        });
+        // Walker Enemy (unchanged)
+        mk('enm', 32, 24, (c,w,h) => {
+            c.fillStyle='#f44'; c.beginPath(); c.arc(16,12,12,0,Math.PI*2); c.fill();
+            c.fillStyle='#800'; c.fillRect(4,18,6,6); c.fillRect(22,18,6,6);
+        });
+        // Jumper Enemy (unchanged)
+        mk('jenm', 32, 24, (c,w,h) => {
+            c.fillStyle='#f0f'; c.beginPath(); c.arc(16,12,12,0,Math.PI*2); c.fill();
+            c.fillStyle='#000'; c.fillRect(4,18,6,6); c.fillRect(22,18,6,6);
+        });
+        // Tank Enemy (New)
+        mk('tenm', 40, 40, (c,w,h) => {
+            c.fillStyle='#004'; c.fillRect(0, 10, w, h-10);
+            c.fillStyle='#44f'; c.beginPath(); c.arc(20,10,10,0,Math.PI*2); c.fill();
+            c.fillStyle='#000'; c.fillRect(5, 30, 10, 10); c.fillRect(25, 30, 10, 10);
+        });
+        // Tile (unchanged)
+        mk('tile', 40, 40, (c,w,h) => {
+            c.fillStyle='#4a4'; c.fillRect(0,0,w,8);
+            c.fillStyle='#543'; c.fillRect(0,8,w,h-8);
+            c.fillStyle='rgba(0,0,0,0.2)'; c.fillRect(5,15,10,10);
+        });
+        // Moving Platform (unchanged)
+        mk('mplt', 40, 40, (c,w,h) => {
+            c.fillStyle='#777'; c.fillRect(0,0,w,h);
+            c.fillStyle='#aaa'; c.fillRect(2,2,w-4,h-4);
+        });
+        // Spike (unchanged)
+        mk('spk', 40, 40, (c,w,h) => {
+            c.fillStyle='#bbb'; c.beginPath(); c.moveTo(0,40); c.lineTo(20,0); c.lineTo(40,40); c.fill();
+        });
+        // Coin (unchanged)
+        mk('coin', 16, 16, (c,w,h) => {
+            c.fillStyle='#fd0'; c.beginPath(); c.arc(8,8,7,0,Math.PI*2); c.fill();
+            c.strokeStyle='#fa0'; c.lineWidth=2; c.stroke();
+        });
+        // Health Pack (unchanged)
+        mk('heal', 16, 16, (c,w,h) => {
+            c.fillStyle='#0f0'; c.fillRect(3, 6, 10, 4);
+            c.fillRect(6, 3, 4, 10);
+        });
+        // Armor Pack (New)
+        mk('armr', 16, 16, (c,w,h) => {
+            c.fillStyle='#00f'; c.fillRect(0, 5, 16, 6);
+            c.fillStyle='#fff'; c.fillRect(4, 7, 8, 2);
+        });
+        // Speed Boost (New)
+        mk('bost', 16, 16, (c,w,h) => {
+            c.fillStyle='#ff0'; c.beginPath(); c.moveTo(0,16); c.lineTo(16,8); c.lineTo(0,0); c.fill();
+            c.fillStyle='#f00'; c.beginPath(); c.moveTo(4,12); c.lineTo(12,8); c.lineTo(4,4); c.fill();
+        });
+        // Projectile (unchanged)
+        mk('proj', 8, 8, (c,w,h) => { c.fillStyle='#ff0'; c.beginPath(); c.arc(4,4,4,0,Math.PI*2); c.fill(); });
+        
+        // Parallax assets remain the same
+        mk('tree', 60, 100, (c,w,h) => {
+            c.fillStyle='#543'; c.fillRect(25, 30, 10, 70);
+            c.fillStyle='#050'; c.beginPath(); c.arc(30, 40, 30, 0, Math.PI*2); c.fill();
+        });
+        mk('bird', 20, 10, (c,w,h) => {
+            c.strokeStyle='#fff'; c.lineWidth=2; c.beginPath();
+            c.moveTo(0, 5); c.lineTo(10, 0); c.lineTo(20, 5);
+            c.moveTo(10, 0); c.lineTo(10, 10); c.stroke();
+        });
+    };
+
+    return { init, get: (k) => cache[k] };
+})();
+
+// --- 6. PROCGEN (Modified for length, reachability, and variety) ---
+const PG = (() => {
+    let _s = 1;
+    const srand = (str) => { _s = 0; for(let i=0; i<str.length; i++) _s = Math.imul(31, _s) + str.charCodeAt(i)|0; };
+    const rand = () => { _s = (_s * 16807) % 2147483647; return (_s-1) / 2147483646; };
+    const rInt = (min, max) => Math.floor(rand() * (max - min + 1)) + min;
+
+    // Helper to check if a position is reachable by double jump (MODIFIED)
+    const isReachable = (fromY, toY, dist) => {
+        const hDiff = fromY - toY; // Positive if target is lower, Negative if target is higher
+        const maxH = C.MAX_DBL_JUMP_DIST_Y;
+        const maxD = C.MAX_DBL_JUMP_DIST_X;
+        
+        if (dist < C.TILE) return true; // Adjacent or very close platforms are always reachable
+
+        // Downward jump (Target lower)
+        if (hDiff >= 0) {
+            // Can always jump down a short distance, but horizontal distance must be reachable
+            if (dist > maxD + 20) return false; 
+        } 
+        // Upward jump (Target higher)
+        else {
+            // Vertical difference check (target can be up to maxH higher)
+            if (Math.abs(hDiff) > maxH) return false;
+            // Horizontal distance check (less horizontal distance if jumping higher)
+            const horizontalReach = maxD * (1 - Math.abs(hDiff) / maxH); // Simple approximation
+            if (dist > horizontalReach) return false;
+        }
+        return true;
+    };
+
+    const generate = (idx, seedStr, diff) => {
+        srand(seedStr + idx);
+        let retries = 50; // Increased retries for stability on harder levels
+        while(retries-- > 0) {
+            const lvl = build(idx, diff);
+            // Basic validation: ensure the start is not blocked
+            if (lvl.tiles.some(t => M.overlap(t, lvl.start))) continue; 
+            return lvl; 
+        }
+        LOG("ProcGen failed after 50 retries, falling back to a simpler design.");
+        return build(idx, 1); // Fallback is safer if all retries fail
+    };
+
+    const build = (idx, diff) => {
+        const baseLen = 70 + (idx*10); // LONGER LEVELS: Increased length formula
+        const len = baseLen + rInt(-5, 15);
+        const lvl = { w: len*C.TILE, tiles: [], ents: [], start:{x:100,y:0}, exit:{x:0,y:0} };
+        
+        let h = 10, gap = 0, lastTileX = -1, lastTileY = (20-10)*C.TILE; // Initialize lastTileY correctly
+        
+        const effectiveDiff = M.clamp(diff + Math.floor(idx/3), 1, 12); // Steeper difficulty curve
+        const T = C.TILE;
+
+        // Ground generation with Reachability Fix (MODIFIED)
+        for(let x=0; x<len; x++) {
+            const isSafe = x < 5 || x > len-5;
+            let currentH = h;
+            
+            if(isSafe) gap = 0;
+            else if(gap > 0) { gap--; continue; }
+            else if(rand() < 0.15 + (effectiveDiff*0.04)) { // Increased chance for features
+                // Decide on Gap or Single Platform
+                if(rand() < 0.6 && effectiveDiff > 3 && lastTileX > 0) {
+                    const platformW = rInt(2, 4) * T; // Platforms can be wider
+                    const platformX = (x) * T;
+                    
+                    let newH = M.clamp(currentH + rInt(-3, 3), 4, 16); // Increased height change range for challenge
+                    let newY = (20 - newH) * T;
+                    
+                    // --- Reachability check for platform generation ---
+                    const requiredDist = platformX - (lastTileX + T);
+                    
+                    if (requiredDist > 0 && !isReachable(lastTileY, newY, requiredDist)) {
+                        // Attempt to make it reachable by adjusting height
+                        let tries = 5;
+                        while(tries-- > 0) {
+                            newH = M.clamp(newH + rInt(-1, 1), 4, 16);
+                            newY = (20 - newH) * T;
+                            if(isReachable(lastTileY, newY, requiredDist)) break;
+                        }
+
+                        if (!isReachable(lastTileY, newY, requiredDist)) {
+                            // If still unreachable, create a gap instead (safer)
+                            gap = rInt(1, 2 + Math.floor(effectiveDiff/2)); 
+                            continue; 
+                        }
+                    }
+                    // --------------------------------------------------
+                    
+                    lvl.tiles.push({x:platformX, y:newY, w:platformW, h:T, t:'tile'});
+                    lastTileX = platformX + platformW - T; 
+                    lastTileY = newY;
+
+                    x += Math.floor(platformW / T); 
+                    gap = rInt(1, 2); 
+                    continue; 
+                } else {
+                    gap = rInt(1, 2 + Math.floor(effectiveDiff/2)); continue;
+                }
+            }
+            
+            // Apply Height change
+            if(rand() < 0.25) {
+                const prevH = h;
+                currentH = M.clamp(currentH + rInt(-3, 3), 4, 16); // Increased range
+                
+                const currentY = (20 - prevH) * T;
+                const newY = (20 - currentH) * T;
+                
+                // --- Reachability check for height change ---
+                const requiredDist = (x * T) - (lastTileX + T);
+
+                if (requiredDist > 0 && !isReachable(lastTileY, newY, requiredDist)) {
+                    // Force the new height to be the old height or a reachable height
+                    let tries = 5;
+                    while(tries-- > 0) {
+                        currentH = M.clamp(currentH + rInt(-1, 1), 4, 16);
+                        let potentialY = (20 - currentH) * T;
+                        if(isReachable(lastTileY, potentialY, requiredDist)) break;
+                        if(tries === 0) currentH = prevH; // Fallback to old height if all else fails
+                    }
+                }
+                // ------------------------------------------
+                h = currentH;
+            }
+
+            // Add Ground
+            for(let y=20-h; y<25; y++) lvl.tiles.push({x:x*T, y:y*T, w:T, h:T, t:'tile'});
+            
+            // Update last tile position
+            if (x * T > lastTileX) {
+                lastTileX = x * T; 
+                lastTileY = (20 - h) * T;
+            }
+
+            // Features (Spikes/Enemies/Coins/Heal/Moving Platform)
+            const topY = (20-h)*T;
+            if(x>5 && x<len-5) {
+                const featureRoll = rand();
+                const enemyTypeRoll = rand();
+
+                if(featureRoll < 0.05*effectiveDiff) { // Spikes
+                    lvl.ents.push({t:'spk', x:x*T, y:topY-T, w:T, h:T});
+                } else if(featureRoll < 0.1*effectiveDiff) { // Enemies
+                    let type = 'enm';
+                    if (enemyTypeRoll < 0.3) type = 'jenm';
+                    else if (enemyTypeRoll > 0.8 && effectiveDiff > 5) type = 'tenm'; // Tank enemy
+                    lvl.ents.push({t:type, x:x*T, y:topY-40, w:32, h:24, vx:50 * (rand()>0.5?1:-1)});
+                } else if(featureRoll < 0.15 * effectiveDiff) { // Moving Platforms (Increased Chance for Multiple Paths)
+                    const vertical = rand() < 0.5;
+                    const moveRange = rInt(2, 5) * T; // Increased movement range
+                    const startY = topY-T-rInt(2, 6)*T; // Higher starting positions for alternative paths
+                    lvl.tiles.push({t:'mplt', x:x*T, y:startY, w:T*2, h:T, 
+                        p1:{x:x*T, y:startY}, p2:{x:x*T + (vertical?0:moveRange), y:startY + (vertical?moveRange:0)}});
+                    x += 2; 
+                } else if(featureRoll < 0.4) { // Coins
+                    lvl.ents.push({t:'coin', x:x*T+T/4, y:topY-T-rInt(0,100), w:16, h:16});
+                } else if(featureRoll < 0.45 && effectiveDiff > 5) { // Health Packs (Rarer)
+                    lvl.ents.push({t:'heal', x:x*T+T/4, y:topY-T-rInt(0,100), w:16, h:16});
+                } else if(featureRoll < 0.47 && effectiveDiff > 7) { // Armor Packs (Rarest)
+                    lvl.ents.push({t:'armr', x:x*T+T/4, y:topY-T-rInt(0,100), w:16, h:16});
+                } else if(featureRoll < 0.49 && effectiveDiff > 8) { // Speed Boost (Rarest)
+                    lvl.ents.push({t:'bost', x:x*T+T/4, y:topY-T-rInt(0,100), w:16, h:16});
+                }
+            }
+        }
+        
+        lvl.start.y = (20-10)*T - 100;
+        lvl.exit = { x:(len-2)*T, y:0, w:80, h:2000 };
+        // Boundaries
+        lvl.tiles.push({x:-40, y:0, w:40, h:2000, t:'solid'});
+        lvl.tiles.push({x:len*T, y:0, w:40, h:2000, t:'solid'});
+        return lvl;
+    };
+
+    return { generate };
+})();
+
+// --- 7. PHYSICS & ENTITIES ---
+
+// Dialogue Logic (MODIFIED TIMER)
+const Dialogue = (() => {
+    const bubble = document.getElementById('dialogue');
+    let targetEnt = null;
+    let timer = 0;
+    
+    const messages = [
+        "Can't touch this!", "You're too slow!", "Think you can pass?", 
+        "Rabbit stew time!", "Prepare to fail!", "One more step...",
+        "Pathetic.", "Jump or Die!", "My spot now!"
+    ];
+
+    const show = (ent, msg) => {
+        targetEnt = ent;
+        bubble.innerText = msg;
+        bubble.style.visibility = 'visible';
+        timer = 4; // **MODIFICATION HERE: Show for 4 seconds (was 2)**
+    };
+
+    const update = (dt, camX) => {
+        if (targetEnt && timer > 0) {
+            timer -= dt;
+            // Position the bubble above the entity
+            const x = Math.floor(targetEnt.x - camX + targetEnt.w / 2);
+            const y = Math.floor(targetEnt.y);
+            bubble.style.left = `${x}px`;
+            bubble.style.top = `${y}px`;
+
+            if (timer <= 0 || targetEnt.dead) {
+                targetEnt = null;
+                bubble.style.visibility = 'hidden';
+            }
+        } else if (bubble.style.visibility === 'visible') {
+            bubble.style.visibility = 'hidden';
+        }
+    };
+    
+    const getRandomMsg = () => messages[Math.floor(Math.random() * messages.length)];
+
+    return { show, update, getRandomMsg };
+})();
+
+
+class Ent {
+    constructor(t,x,y,w,h) { 
+        this.t=t; this.x=x; this.y=y; this.w=w; this.h=h; this.vx=0; this.vy=0; 
+        this.dead=false; this.grounded=false; 
+    }
+    update(dt, tiles) {
+        if(this.t !== 'proj') {
+            this.vy += C.G * dt;
+            this.vy = Math.min(this.vy, C.T_VEL);
+        }
+
+        this.x += this.vx * dt;
+        this.col(tiles, 'x');
+        
+        this.y += this.vy * dt;
+        this.col(tiles, 'y');
+        
+        if (this.vy !== 0) this.grounded = false;
+    }
+    col(tiles, axis) {
+        const T = C.TILE;
+        const dt = Game.getDT(); // Get the current fixed delta time
+        
+        const minX = Math.floor((this.x - T) / T);
+        const maxX = Math.ceil((this.x + this.w + T) / T);
+        const minY = Math.floor((this.y - T) / T);
+        const maxY = Math.ceil((this.y + this.h + T) / T);
+        
+        // Filter nearby tiles (only static tiles and moving platforms)
+        const nearbyTiles = tiles.filter(t => 
+            (t.t === 'tile' || t.t === 'mplt' || t.t === 'solid') && 
+            t.x/T >= minX && t.x/T < maxX && 
+            t.y/T >= minY && t.y/T < maxY
+        );
+
+        for(let t of nearbyTiles) {
+            if(M.overlap(this, t)) {
+                if(this.t === 'spk' || this.t === 'coin' || this.t === 'heal' || this.t === 'armr' || this.t === 'bost') continue;
+                
+                if(axis === 'x') {
+                    this.x = (this.x < t.x) ? t.x - this.w : t.x + t.w;
+                    this.vx = 0;
+                    if(this.t === 'enm' || this.t === 'jenm' || this.t === 'tenm') this.vx = -this.vx;
+                } else {
+                    if(this.vy > 0) { 
+                        this.grounded = true; 
+                        this.y = t.y - this.h; 
+                        // FIX: If standing on a moving platform, inherit its movement
+                        if(t.t === 'mplt' && this.t === 'plr') {
+                            this.x += t.vx * dt; // Correctly apply platform x-movement
+                            this.y = t.y - this.h; // Ensure y is reset to the platform top
+                        }
+                    }
+                    else { this.y = t.y + t.h; }
+                    this.vy = 0;
+                }
+            }
+        }
+    }
+    draw(ctx, cx) {
+        if(this.x+this.w < cx || this.x > cx + ctx.canvas.width) return;
+        const img = GFX.get(this.t);
+        if(img) ctx.drawImage(img, Math.floor(this.x - cx), Math.floor(this.y));
+        else { ctx.fillStyle='red'; ctx.fillRect(this.x-cx, this.y, this.w, this.h); }
+        
+        if(Store.data.opt.dbg) {
+             ctx.strokeStyle = '#f0f'; ctx.strokeRect(this.x - cx, this.y, this.w, this.h);
+        }
+    }
+}
+
+class Player extends Ent {
+    constructor(x,y) { 
+        super('plr',x,y,24,30); 
+        this.hp=100; 
+        this.armor=0; // New Armor stat
+        this.inv=0; 
+        this.jumps=0;
+        this.speedBoost = 0; // New boost timer
+    }
+    update(dt, tiles) {
+        const i = Inp.get();
+        const speed = C.PLR_SPD + (this.speedBoost > 0 ? 150 : 0); // Apply speed boost
+        
+        // Move
+        if(i.l) this.vx = -speed;
+        else if(i.r) this.vx = speed;
+        else {
+            this.vx *= 0.8;
+            if (Math.abs(this.vx) < 10) this.vx = 0;
+        }
+        
+        // Jump
+        if(i.j && !this.pj) {
+            if(this.grounded) { this.vy = C.JUMP; this.jumps=1; this.grounded=false; Aud.sfx.jump(); }
+            else if(this.jumps < 2) { this.vy = C.DBL_JUMP; this.jumps++; Aud.sfx.jump(); }
+        }
+        this.pj = i.j;
+        
+        // Shoot
+        if(i.f && !this.pf) {
+            const dir = this.vx >= 0 ? 1 : -1;
+            Game.spawnProj(this.x + (dir>0?30:-10), this.y+10, dir*600);
+        }
+        this.pf = i.f;
+
+        super.update(dt, tiles);
+        
+        if(this.y > C.HEIGHT + 500) this.hurt(100);
+        if(this.inv > 0) this.inv -= dt;
+        if(this.speedBoost > 0) this.speedBoost -= dt;
+    }
+    hurt(dmg) {
+        if(this.inv > 0 || this.dead) return;
+        
+        // Armor absorption logic
+        if (this.armor > 0) {
+            const absorbed = Math.min(this.armor, dmg);
+            this.armor -= absorbed;
+            dmg -= absorbed;
+        }
+        
+        if (dmg > 0) this.hp -= dmg; 
+        
+        this.inv = 1; Aud.sfx.hit();
+        this.vy = -300;
+        this.hp = M.clamp(this.hp, 0, 100);
+        this.armor = M.clamp(this.armor, 0, 100);
+    }
+    heal(amount) {
+        this.hp += amount;
+        this.hp = M.clamp(this.hp, 0, 100);
+        Aud.sfx.heal();
+    }
+    addArmor(amount) {
+        this.armor += amount;
+        this.armor = M.clamp(this.armor, 0, 100);
+        Aud.sfx.armor();
+    }
+    speedBoostStart() {
+        this.speedBoost = 5; // 5 seconds boost
+        Aud.sfx.boost();
+    }
+    draw(ctx, cx) {
+        if(this.inv > 0 && Math.floor(Date.now()/50)%2) return;
+        super.draw(ctx, cx);
+    }
+}
+
+class Enemy extends Ent {
+    constructor(x, y, vx, hp=1) {
+        super('enm', x, y, 32, 24);
+        this.vx = vx;
+        this.baseVX = Math.abs(vx);
+        this.maxHP = hp;
+        this.hp = hp;
+        this.dialogueTimer = 3 + Math.random() * 5;
+    }
+    update(dt, tiles) {
+        super.update(dt, tiles);
+        
+        if(this.grounded) {
+             const T = C.TILE;
+             const checkX = this.x + (this.vx > 0 ? this.w + 1 : -1); 
+             const checkY = this.y + this.h + 1;
+
+             // Check if there is NO tile directly beneath the forward check point
+             const onEdge = !tiles.some(t => 
+                 (t.t === 'tile' || t.t === 'mplt') &&
+                 t.x < checkX && t.x + t.w > checkX && 
+                 t.y < checkY && t.y + t.h > checkY
+             );
+             
+             if(onEdge) this.vx *= -1;
+             
+             if (Math.abs(this.vx) !== this.baseVX) this.vx = this.baseVX * Math.sign(this.vx);
+        }
+        
+        // Dialogue logic (Uses the modified Dialogue timer)
+        this.dialogueTimer -= dt;
+        if (this.dialogueTimer <= 0) {
+            Dialogue.show(this, Dialogue.getRandomMsg());
+            this.dialogueTimer = 5 + Math.random() * 5;
+        }
+    }
+    hit() {
+        this.hp--;
+        if (this.hp <= 0) this.dead = true;
+    }
+}
+
+class JumperEnemy extends Enemy {
+    constructor(x, y) {
+        super(x, y, 50, 1); 
+        this.t = 'jenm';
+        this.jumpTimer = 1.5;
+    }
+    update(dt, tiles) {
+        // AI: Simple jump every 1.5-3 seconds
+        this.jumpTimer -= dt;
+        if (this.grounded && this.jumpTimer <= 0) {
+            this.vy = C.JUMP * 0.7; 
+            this.grounded = false;
+            this.jumpTimer = 1.5 + Math.random() * 1.5; 
+        }
+        super.update(dt, tiles);
+    }
+}
+
+class TankEnemy extends Enemy {
+    constructor(x, y, vx) {
+        super(x, y, vx, 3); // 3 HP
+        this.t = 'tenm';
+        this.w = 40; this.h = 40; // Larger size
+        this.baseVX = Math.abs(vx) * 0.5; // Slower speed
+    }
+    update(dt, tiles) {
+        super.update(dt, tiles);
+        // Tanks don't talk as often, they just look tough
+        this.dialogueTimer -= dt;
+        if (this.dialogueTimer <= 0) {
+            Dialogue.show(this, "I'm invincible!");
+            this.dialogueTimer = 7 + Math.random() * 8;
+        }
+    }
+}
+
+
+class MovingPlatform {
+    constructor(x, y, w, h, p1, p2) {
+        this.t = 'mplt';
+        this.x=x; this.y=y; this.w=w; this.h=h; 
+        this.p1 = p1; this.p2 = p2;
+        this.vx=0; this.vy=0;
+        this.speed = 100;
+        this.prog = 0; 
+        this.dir = 1; 
+    }
+    update(dt) {
+        this.prog += this.dir * (this.speed / (M.dist(this.p1, this.p2) || 1)) * dt;
+        
+        let oldX = this.x, oldY = this.y;
+        
+        if (this.prog >= 1) { this.prog = 1; this.dir = -1; }
+        if (this.prog <= 0) { this.prog = 0; this.dir = 1; }
+        
+        const f = this.prog;
+        this.x = this.p1.x + (this.p2.x - this.p1.x) * f;
+        this.y = this.p1.y + (this.p2.y - this.p1.y) * f;
+        
+        // Calculate instantaneous velocity for player inheritance
+        this.vx = (this.x - oldX) / dt;
+        this.vy = (this.y - oldY) / dt;
+    }
+    draw(ctx, cx) {
+        if(this.x+this.w < cx || this.x > cx + ctx.canvas.width) return;
+        const img = GFX.get(this.t);
+        if(img) ctx.drawImage(img, Math.floor(this.x - cx), Math.floor(this.y));
+    }
+}
+
+class Coin extends Ent {
+    constructor(x, y) { super('coin', x, y, 16, 16); }
+    update(dt, tiles) { this.y += Math.sin(Date.now()/500) * dt * 30; }
+}
+
+class HealthPack extends Ent {
+    constructor(x, y) { super('heal', x, y, 16, 16); }
+    update(dt, tiles) { this.y += Math.sin(Date.now()/500 + 1.5) * dt * 30; }
+}
+
+class ArmorPack extends Ent { // New
+    constructor(x, y) { super('armr', x, y, 16, 16); }
+    update(dt, tiles) { this.y += Math.sin(Date.now()/500 + 3) * dt * 30; }
+}
+
+class SpeedBoost extends Ent { // New
+    constructor(x, y) { super('bost', x, y, 16, 16); }
+    update(dt, tiles) { this.y += Math.sin(Date.now()/500 + 4.5) * dt * 30; }
+}
+
+class Spike extends Ent {
+    constructor(x, y) { super('spk', x, y, 40, 40); }
+    update(dt, tiles) {}
+}
+
+class Projectile extends Ent {
+    constructor(x, y, vx) {
+        super('proj', x, y, 8, 8);
+        this.vx = vx;
+        this.life = 1;
+        this.vy = 0;
+    }
+    update(dt, tiles) {
+        this.x += this.vx * dt;
+        this.col(tiles, 'x'); 
+        this.life -= dt;
+        
+        if (this.vx === 0 && this.life > 0) this.dead = true; 
+    }
+}
+
+// --- 7.5 PARALLAX BACKGROUND EFFECTS (Unchanged) ---
+const BG_FX = (() => {
+    let trees = [];
+    let birds = [];
+
+    const init = (lvlW, seed) => {
+        trees = []; birds = [];
+        const r = new Math.seedrandom(seed);
+        
+        for(let i=0; i<lvlW/C.TILE/5; i++) {
+            trees.push({ x: r()*lvlW, y: C.HEIGHT*0.8 - r()*200, scale: r()*0.5 + 0.5 });
+        }
+        
+        for(let i=0; i<10; i++) {
+            birds.push({ x: r()*lvlW, y: r()*C.HEIGHT*0.4 + 50, vx: r()*50 + 20, vy: 0, phase: r()*Math.PI*2 });
+        }
+    };
+
+    const update = (dt) => {
+        const time = Date.now()/1000;
+        birds.forEach(b => {
+            b.x += b.vx * dt;
+            b.y += Math.sin(time + b.phase) * 50 * dt;
+            if(b.x > Game.getLevel().w) b.x = -50;
+        });
+    };
+
+    const draw = (ctx, camX) => {
+        ctx.fillStyle = '#445';
+        ctx.fillRect(0, 0, C.WIDTH, C.HEIGHT);
+
+        ctx.fillStyle = '#678';
+        ctx.fillRect(0, C.HEIGHT * 0.8, C.WIDTH, C.HEIGHT * 0.2);
+
+        const treeImg = GFX.get('tree');
+        trees.forEach(t => {
+            const x = t.x - camX * 0.2;
+            const y = t.y;
+            const size = t.scale * 1.5;
+            ctx.drawImage(treeImg, 
+                (x % C.WIDTH + C.WIDTH) % C.WIDTH, 
+                y, 
+                treeImg.width * size, 
+                treeImg.height * size);
+        });
+        
+        const birdImg = GFX.get('bird');
+        birds.forEach(b => {
+            const x = b.x - camX * 0.4;
+            ctx.drawImage(birdImg, 
+                (x % C.WIDTH + C.WIDTH) % C.WIDTH, 
+                b.y);
+        });
+    };
+
+    return { init, update, draw };
+})();
+
+// --- 8. GAME ENGINE ---
+const Game = (() => {
+    let cvs, ctx, raf;
+    let state = 'menu';
+    let lvl, lvlBufferCanvas;
+    let plr, ents = [], projs = [];
+    let camX = 0, lastT = 0;
+    let accumulator = 0;
+    let lastDT = C.FIXED_DT; 
+    
+    // Loot spawn constants (New)
+    const LOOT = { HEAL: 0.10, ARMOR: 0.05, BOOST: 0.05 };
+
+    const init = () => {
+        try {
+            cvs = document.getElementById('cvs');
+            ctx = cvs.getContext('2d', { alpha: false });
+            resize();
+            window.addEventListener('resize', resize);
+            Store.load();
+            GFX.init();
+            Aud.init();
+            UI.init();
+        } catch(e) { alert("Init Error: " + e.message); }
+    };
+    
+    const resize = () => {
+        C.WIDTH = window.innerWidth;
+        C.HEIGHT = window.innerHeight;
+        cvs.width = C.WIDTH; cvs.height = C.HEIGHT;
+        ctx.imageSmoothingEnabled = false;
+    };
+
+    const start = (isNew, labCfg) => {
+        Aud.init();
+        if(isNew) {
+            if(labCfg) { Store.data.seed=labCfg.s; Store.data.lvl=labCfg.l; }
+            else { Store.data.seed = 'rabbit'; Store.data.lvl = 1; Store.data.score = 0; }
+        }
+        
+        // Difficulty scales faster for 30 levels
+        const diff = labCfg ? labCfg.d : M.clamp(1 + Math.floor(Store.data.lvl / 2), 1, 10);
+        lvl = PG.generate(Store.data.lvl, Store.data.seed, diff);
+        BG_FX.init(lvl.w, Store.data.seed + Store.data.lvl);
+        
+        // Setup Entities
+        plr = new Player(lvl.start.x, lvl.start.y);
+        // If continuing, set player stats from store data
+        if (!isNew) {
+             // In a real game, you'd save/load HP/Armor, but for this demo, we reset to 100/0 on level load for simplicity
+             // plr.hp = Store.data.player_hp || 100;
+             // plr.armor = Store.data.player_armor || 0;
+        }
+        
+        ents = lvl.ents.map(e => {
+            if(e.t === 'enm') return new Enemy(e.x, e.y, e.vx);
+            if(e.t === 'jenm') return new JumperEnemy(e.x, e.y);
+            if(e.t === 'tenm') return new TankEnemy(e.x, e.y, e.vx); // New Tank Enemy
+            if(e.t === 'coin') return new Coin(e.x, e.y);
+            if(e.t === 'heal') return new HealthPack(e.x, e.y);
+            if(e.t === 'armr') return new ArmorPack(e.x, e.y); // New Armor Pack
+            if(e.t === 'bost') return new SpeedBoost(e.x, e.y); // New Speed Boost
+            if(e.t === 'spk') return new Spike(e.x, e.y);
+            return null;
+        }).filter(e => e !== null);
+
+        // Add Moving Platforms (which are part of tiles) to ents for updating
+        lvl.tiles.filter(t => t.t === 'mplt').forEach(mp => {
+            // Add a Moving Platform instance to ents
+            const mpEnt = new MovingPlatform(mp.x, mp.y, mp.w, mp.h, mp.p1, mp.p2);
+            ents.push(mpEnt);
+            // Also update the original tile object reference to the entity so Player collision works
+            Object.assign(mp, mpEnt);
+        });
+
+        projs = [];
+        
+        // Build Static Tile Map Buffer
+        lvlBufferCanvas = document.createElement('canvas');
+        lvlBufferCanvas.width = lvl.w;
+        lvlBufferCanvas.height = C.HEIGHT; 
+        const bCtx = lvlBufferCanvas.getContext('2d');
+        bCtx.imageSmoothingEnabled = false;
+
+        const tileImg = GFX.get('tile');
+        const spikeImg = GFX.get('spk');
+        
+        for(let t of lvl.tiles) {
+            if(t.t === 'solid' || t.t === 'mplt') continue; // Don't draw solids/moving platforms here
+            if(t.t === 'tile') bCtx.drawImage(tileImg, t.x, t.y);
+            if(t.t === 'spk') bCtx.drawImage(spikeImg, t.x, t.y);
+        }
+        
+        state = 'play';
+        Aud.startMus();
+        loop(0);
+        UI.toScreen(null);
+    };
+
+    const loop = (t) => {
+        if(state !== 'play') return;
+        raf = requestAnimationFrame(loop);
+        
+        const delta = (t - lastT) / 1000;
+        lastT = t;
+        accumulator = M.clamp(accumulator + delta, 0, 0.2); 
+        
+        while(accumulator >= C.FIXED_DT) {
+            lastDT = C.FIXED_DT;
+            update(C.FIXED_DT);
+            accumulator -= C.FIXED_DT;
+        }
+        
+        render(accumulator / C.FIXED_DT);
+    };
+
+    const spawnProj = (x, y, vx) => {
+        projs.push(new Projectile(x, y, vx)); Aud.sfx.shoot();
+    };
+    
+    const spawnLoot = (x, y) => {
+        const roll = Math.random();
+        if (roll < LOOT.HEAL) return new HealthPack(x, y);
+        if (roll < LOOT.HEAL + LOOT.ARMOR) return new ArmorPack(x, y);
+        if (roll < LOOT.HEAL + LOOT.ARMOR + LOOT.BOOST) return new SpeedBoost(x, y);
+        return null;
+    };
+
+    const update = (dt) => {
+        plr.update(dt, lvl.tiles);
+        Dialogue.update(dt, camX); // Update dialogue position
+
+        let target = plr.x - C.WIDTH * 0.3;
+        camX += (target - camX) * 5 * dt; 
+        camX = M.clamp(camX, 0, lvl.w - C.WIDTH);
+
+        BG_FX.update(dt);
+
+        projs.forEach(p => {
+            p.update(dt, lvl.tiles);
+            p.life -= dt;
+            ents.forEach(e => {
+                // Enemy-Projectile collision
+                if((e.t === 'enm' || e.t === 'jenm' || e.t === 'tenm') && !e.dead && M.overlap(p, e)) { 
+                    e.hit(); p.dead = true; 
+                    if (e.dead) {
+                        Store.data.score += (e.t === 'tenm' ? 300 : e.t === 'jenm' ? 150 : 50); 
+                        Aud.sfx.hit();
+                        const loot = spawnLoot(e.x + e.w/2, e.y);
+                        if (loot) ents.push(loot);
+                    }
+                }
+            });
+        });
+        projs = projs.filter(p => p.life > 0 && !p.dead);
+
+        const oldEnts = ents;
+        ents = [];
+        // Update Dynamic Entities (Enemies, Coins, Moving Platforms, Health)
+        oldEnts.forEach(e => {
+            if(e.dead) return;
+            if(Math.abs(e.x - plr.x) > C.WIDTH*2 && e.t !== 'mplt') { ents.push(e); return; } // Keep off-screen platforms
+            
+            if(e.t === 'enm' || e.t === 'jenm' || e.t === 'tenm' || e.t === 'coin' || e.t === 'heal' || e.t === 'armr' || e.t === 'bost') e.update(dt, lvl.tiles);
+            if(e.t === 'mplt') e.update(dt);
+            
+            // Collision with Player
+            if(M.overlap(plr, e)) {
+                if(e.t === 'coin') { e.dead = true; Store.data.score += 10; Aud.sfx.coin(); }
+                else if(e.t === 'heal') { e.dead = true; plr.heal(30); } 
+                else if(e.t === 'armr') { e.dead = true; plr.addArmor(30); } // New Armor Pickup
+                else if(e.t === 'bost') { e.dead = true; plr.speedBoostStart(); } // New Speed Boost Pickup
+                else if(e.t === 'spk') plr.hurt(25);
+                else if(e.t === 'enm' || e.t === 'jenm' || e.t === 'tenm') {
+                    if(plr.vy > 0 && plr.y + plr.h < e.y + e.h/2) { // Jumped on top
+                        e.hit(); plr.vy = -300; 
+                        if (e.dead) {
+                           Store.data.score += (e.t === 'tenm' ? 300 : e.t === 'jenm' ? 150 : 50); 
+                           Aud.sfx.hit();
+                           const loot = spawnLoot(e.x + e.w/2, e.y);
+                           if (loot) ents.push(loot);
+                        }
+                    }
+                    else plr.hurt(20);
+                }
+            }
+            if(!e.dead) ents.push(e);
+        });
+
+        if(plr.hp <= 0) gameOver();
+        if(M.overlap(plr, lvl.exit)) win();
+        
+        UI.hud(plr.hp, plr.armor, Store.data.score, Store.data.lvl, Store.data.seed);
+    };
+
+    const render = (interpolationFactor) => {
+        BG_FX.draw(ctx, camX);
+        
+        // Draw Pre-Rendered Buffer (Static Tiles)
+        ctx.drawImage(lvlBufferCanvas, camX, 0, C.WIDTH, C.HEIGHT, 0, 0, C.WIDTH, C.HEIGHT);
+
+        // Draw Dynamic Entities (Enemies, Coins, Moving Platforms, etc.)
+        ents.forEach(e => { 
+            // Draw moving platform (they are tiles but dynamic)
+            if(e.t === 'mplt' || !e.dead) e.draw(ctx, camX); 
+        });
+        
+        projs.forEach(p => p.draw(ctx, camX));
+        plr.draw(ctx, camX);
+        
+        // Final position for Dialogue bubble (after rendering, before frame end)
+        Dialogue.update(0, camX); 
+
+        if(Store.data.opt.dbg) {
+            ctx.fillStyle='#ff0'; ctx.font = '10px monospace';
+            ctx.fillText(`FPS: ${Math.round(1/0.016)} | ENT: ${ents.length} | PROJ: ${projs.length}`, 10, 20);
+            ctx.fillText(`X:${plr.x.toFixed(0)} Y:${plr.y.toFixed(0)} | VY:${plr.vy.toFixed(0)} | G:${plr.grounded}`, 10, 30);
+            ctx.fillText(`HP:${plr.hp.toFixed(0)} | ARM:${plr.armor.toFixed(0)} | BOOST:${plr.speedBoost.toFixed(1)}`, 10, 40);
+        }
+    };
+
+    const gameOver = () => {
+        state = 'over'; cancelAnimationFrame(raf); Aud.stopMus(); Aud.sfx.hit();
+        UI.toScreen('scr-res');
+        document.getElementById('res-title').innerText = "GAME OVER";
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('res-stats').innerText = `Final Score: ${Store.data.score}`;
+        Store.save();
+    };
+
+    const win = () => {
+        state = 'win'; cancelAnimationFrame(raf); Aud.stopMus(); Aud.sfx.win();
+        
+        const nextLevel = Store.data.lvl + 1;
+        
+        if(nextLevel > C.MAX_LEVEL) {
+            Store.data.lvl = C.MAX_LEVEL; // Keep at max level
+            document.getElementById('res-title').innerText = "GAME COMPLETE!";
+            document.getElementById('btn-next').style.display = 'none';
+        } else {
+            Store.data.lvl = nextLevel; 
+            document.getElementById('res-title').innerText = "LEVEL COMPLETE";
+            document.getElementById('btn-next').style.display = 'inline-block';
+        }
+        
+        Store.save();
+        UI.toScreen('scr-res');
+        document.getElementById('res-stats').innerText = `Score: ${Store.data.score}`;
+    };
+
+    return { 
+        init, start, getLevel: () => lvl, getDT: () => lastDT,
+        pause:()=>{ state='pause'; cancelAnimationFrame(raf); UI.toScreen('scr-pause'); }, 
+        resume:()=>{ state='play'; UI.toScreen(null); lastT = performance.now(); loop(lastT); }, 
+        quit:()=>{ state='menu'; UI.toScreen('scr-start'); Aud.stopMus(); }, 
+        replay:()=>start(false), 
+        spawnProj 
+    };
+})();
+
+// --- 9. UI MANAGE (Unchanged) ---
+const UI = (() => {
+    const el = (i) => document.getElementById(i);
+    const screens = ['scr-start', 'scr-settings', 'scr-lab', 'scr-pause', 'scr-res'];
+    
+    const init = () => {
+        el('btn-play').onclick = () => Game.start(true);
+        el('btn-continue').onclick = () => Game.start(false);
+        el('btn-lab').onclick = () => toScreen('scr-lab');
+        el('btn-settings').onclick = () => {
+            el('opt-vol').value = Store.data.opt.vol;
+            el('opt-mus').checked = Store.data.opt.mus;
+            el('opt-sfx').checked = Store.data.opt.sfx;
+            el('opt-qual').value = Store.data.opt.qual;
+            el('opt-dbg').checked = Store.data.opt.dbg;
+            toScreen('scr-settings');
+        };
+        el('btn-lab-run').onclick = () => {
+            const s = el('lab-seed').value || 'random';
+            const d = parseInt(el('lab-diff').value);
+            Game.start(true, {s, d, l:1});
+        };
+        el('btn-next').onclick = () => Game.start(false);
+        el('pause-icon').onclick = Game.pause;
+
+        el('opt-vol').oninput = (e) => { Store.data.opt.vol = parseInt(e.target.value); Aud.setVol(e.target.value); Store.save(); };
+        el('opt-mus').onchange = (e) => { 
+            Store.data.opt.mus = e.target.checked; 
+            if(e.target.checked) Aud.startMus(); else Aud.stopMus(); 
+            Store.save(); 
+        };
+        el('opt-sfx').onchange = (e) => { Store.data.opt.sfx = e.target.checked; Store.save(); };
+        el('opt-qual').onchange = (e) => { Store.data.opt.qual = e.target.value; Store.save(); };
+        el('opt-dbg').onchange = (e) => { Store.data.opt.dbg = e.target.checked; Store.save(); };
+        
+        if(localStorage.getItem(Store.key)) el('btn-continue').classList.remove('hidden');
+    };
+
+    const toScreen = (id) => {
+        screens.forEach(s => el(s).classList.add('hidden'));
+        if(id) el(id).classList.remove('hidden');
+    };
+
+    const back = () => {
+        Store.save();
+        toScreen('scr-start');
+    };
+
+    const hud = (hp, armor, sc, lv, seed) => { // Updated for armor
+        el('hud-hp').style.width = M.clamp(hp, 0, 100) + '%';
+        el('hud-armor').style.width = M.clamp(armor, 0, 100) + '%';
+        el('hud-score').innerText = `SCORE: ${sc}`;
+        el('hud-lvl').innerText = `LVL: ${lv}/${C.MAX_LEVEL}`;
+        el('hud-seed').innerText = `SEED: ${seed.substring(0, 8).toUpperCase()}`;
+    };
+
+    return { init, toScreen, back, hud, show: toScreen };
+})();
+
+// --- 10. PWA & BOOT (Unchanged) ---
+(function Boot() {
+    
+    Math.seedrandom = function(seed) { 
+        let _s = 0; for(let i=0; i<seed.length; i++) _s = Math.imul(31, _s) + seed.charCodeAt(i)|0;
+        return () => (_s = (_s * 16807) % 2147483647, (_s-1) / 2147483646);
+    };
+    const r = Math.seedrandom('RabbitRushPro');
+
+    const ic = document.createElement('canvas'); ic.width=192; ic.height=192;
+    const ctx = ic.getContext('2d');
+    ctx.fillStyle='#222'; ctx.fillRect(0,0,192,192);
+    ctx.fillStyle='#0f0'; ctx.beginPath(); ctx.arc(96,96,60,0,7); ctx.fill();
+    ctx.fillStyle='#000'; ctx.fillRect(96 - 15 - 5, 80, 15, 15); ctx.fillRect(96 + 5, 80, 15, 15);
+    const iconUrl = ic.toDataURL('image/png');
+
+    const link = document.createElement('link'); link.rel='manifest';
+    const json = JSON.stringify({
+        name:"RabbitRushPro", short_name:"RRPro", start_url:".", display:"standalone",
+        background_color:"#1a1a1a", theme_color:"#1a1a1a",
+        icons:[{src:iconUrl, sizes:"192x192", type:"image/png"}]
+    });
+    link.href = 'data:application/manifest+json,' + encodeURIComponent(json);
+    document.head.appendChild(link);
+
+    if('serviceWorker' in navigator) {
+        // Updated cache name to v5
+        const sw = `
+        self.addEventListener('install', e => e.waitUntil(caches.open('rr-v5').then(c => c.add(location.href))));
+        self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+        `;
+        const blob = new Blob([sw], {type:'text/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(e => LOG('SW Fail'));
+    }
+
+    window.onload = Game.init;
+})();
+</script>
+</body>
+</html>
+
