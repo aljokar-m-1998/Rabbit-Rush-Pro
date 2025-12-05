@@ -106,7 +106,7 @@
             <button id="btn-play">New Game</button>
             <button id="btn-lab">ProcGen Lab</button>
             <button id="btn-settings">Settings</button>
-        </div>
+            <button id="btn-about">About</button> </div>
     </div>
 
     <div id="scr-settings" class="screen hidden">
@@ -130,7 +130,17 @@
             <button onclick="UI.back()">Back</button>
         </div>
     </div>
-
+    
+    <div id="scr-about" class="screen hidden">
+        <h1>About Rabbit Rush Pro</h1>
+        <h2>Enhanced & Challenging Edition</h2>
+        <div class="panel">
+            <p>Game Version: V5.0 - 30 LVL Challenge</p>
+            <p>A fast-paced pixel platformer with procgen levels.</p>
+            <p style="color:#0f0; font-weight:bold;">Development: Mahmoud Hassn</p>
+            <button onclick="UI.back()">Back</button>
+        </div>
+    </div>
     <div id="scr-pause" class="screen hidden">
         <h1>PAUSED</h1>
         <div class="panel">
@@ -170,6 +180,7 @@
  * C. **Platform Height Variance** increased (more verticality/multiple paths).
  * D. **Moving Platforms** chance increased for alternative pathing.
  * E. **Tank Enemy** added for varied combat encounters.
+ * F. **About Screen** added with developer credit. (NEW)
  */
 
 // --- 1. CORE UTILS & CONSTANTS ---
@@ -1241,10 +1252,11 @@ const Game = (() => {
     };
 })();
 
-// --- 9. UI MANAGE (Unchanged) ---
+// --- 9. UI MANAGE (Updated to include 'scr-about') ---
 const UI = (() => {
     const el = (i) => document.getElementById(i);
-    const screens = ['scr-start', 'scr-settings', 'scr-lab', 'scr-pause', 'scr-res'];
+    // ADDED 'scr-about'
+    const screens = ['scr-start', 'scr-settings', 'scr-lab', 'scr-pause', 'scr-res', 'scr-about']; 
     
     const init = () => {
         el('btn-play').onclick = () => Game.start(true);
@@ -1258,6 +1270,9 @@ const UI = (() => {
             el('opt-dbg').checked = Store.data.opt.dbg;
             toScreen('scr-settings');
         };
+        // NEW ABOUT BUTTON HANDLER
+        el('btn-about').onclick = () => toScreen('scr-about');
+
         el('btn-lab-run').onclick = () => {
             const s = el('lab-seed').value || 'random';
             const d = parseInt(el('lab-diff').value);
